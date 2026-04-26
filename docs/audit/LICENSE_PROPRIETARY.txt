@@ -1,0 +1,29 @@
+# PROPRIETARY RIGHTS & COMMERCIAL LICENSE
+**Project:** The Omega Protocol & RCOD Intelligence Engine
+**Copyright Holder:** [Your Full Name]
+**Date:** April 10, 2026
+
+---
+
+## 1. OWNERSHIP OF INTELLECTUAL PROPERTY
+All rights, titles, and interests in and to the "Omega Protocol" (the theoretical framework, axioms, and derivations) and the "RCOD" software engine (the algorithms, scripts, and implementation logic) are exclusively owned by the Copyright Holder. This includes all creative, mathematical, and computational derivations found within this repository.
+
+## 2. GRANT OF EVALUATION LICENSE
+The Copyright Holder hereby grants a limited, non-exclusive, non-transferable license to view and evaluate the software and documentation for personal or internal research purposes only. 
+
+## 3. PROHIBITED USES (RESERVATION OF RIGHTS)
+Unless otherwise granted in writing by the Copyright Holder, the following actions are strictly prohibited:
+*   **Commercial Exploitation:** Use of RCOD or the Omega Protocol to generate revenue, train commercial models, or provide paid services.
+*   **Redistribution:** Sharing, mirroring, or publishing the source code or theoretical documents in any public or private forum.
+*   **Derivative Works:** Creating software or theories based on the RCOD logic or Omega Protocol axioms for anything other than personal evaluation.
+*   **Reverse Engineering:** Attempting to extract proprietary logic for the purpose of bypassing licensing requirements.
+
+## 4. COMMERCIAL LICENSING & USAGE RIGHTS
+Parties interested in commercial usage, integration, or strategic partnership must obtain a formal **Commercial Usage Agreement**. This includes AI infrastructure providers, enterprise data firms, and hardware manufacturers.
+
+## 5. CREATIVE RIGHTS NOTICE
+The "Omega Protocol" represents a unique creative work of informational physics. The Copyright Holder retains all creative rights to the terminology (e.g., Q-Regions, Chain Overlap Density, Informational Viscosity) and the underlying physical ontology.
+
+---
+**For licensing inquiries, contact:** [Your Email/Contact Info]
+**Status:** ALL RIGHTS RESERVED.

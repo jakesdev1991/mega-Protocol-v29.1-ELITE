@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omega Evolution Sim v3.1.0 - Topological Substrate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #050505; color: #e5e7eb; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .omega-glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        .cit-pulse { animation: pulse-omega 1.5s infinite; }
+        @keyframes pulse-omega {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        canvas { border-radius: 0.75rem; background: radial-gradient(circle at center, #111 0%, #050505 100%); }
+        .metric-card { background: rgba(31, 41, 55, 0.5); backdrop-filter: blur(8px); border: 1px solid rgba(75, 85, 99, 0.3); }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-4xl font-black bg-gradient-to-r from-blue-500 via-purple-400 to-green-400 bg-clip-text text-transparent">
+                    OMEGA EVO v3.1.0
+                </h1>
+                <p class="text-gray-500 text-sm font-mono uppercase tracking-widest">Topological Manifold / Protocol v30.1</p>
+            </div>
+            <div id="citIndicator" class="hidden px-4 py-2 bg-green-900/30 border border-green-500 rounded-full text-green-400 text-sm font-bold flex items-center gap-2">
+                <span class="w-2 h-2 bg-green-500 rounded-full cit-pulse"></span>
+                PHASE TRANSITION: CIT+ ACTIVE
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Controls (Left) -->
+            <div class="lg:col-span-3 space-y-6">
+                <div class="metric-card p-6 rounded-2xl">
+                    <h2 class="text-blue-400 font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        HOLP PARAMETERS
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-2">MUTATION RATE (μ)</label>
+                            <input type="range" id="muRange" min="0.001" max="0.03" step="0.001" value="0.005" class="w-full accent-blue-500">
+                            <div class="flex justify-between text-mono text-[10px] mt-1">
+                                <span>0.001</span>
+                                <span id="muVal" class="text-blue-400">0.005</span>
+                                <span>0.030</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-2">LATTICE POLARIZATION</label>
+                            <input type="range" id="gravityRange" min="0" max="1" step="0.1" value="0.5" class="w-full accent-purple-500">
+                            <div class="flex justify-between text-mono text-[10px] mt-1">
+                                <span>WEAK</span>
+                                <span id="gravVal" class="text-purple-400">0.5</span>
+                                <span>STRONG</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-8 space-y-2">
+                        <button id="startBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all active:scale-95">REIFY MANIFOLD</button>
+                        <button id="resetBtn" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-xl text-sm transition-all">DECOHERENCE</button>
+                    </div>
+                </div>
+
+                <div class="metric-card p-6 rounded-2xl">
+                    <h2 class="text-gray-400 font-bold mb-4 text-xs tracking-widest">OMEGA METRICS</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-[10px] text-gray-500">GENERATION (TICK)</p>
+                            <p id="genText" class="text-2xl font-mono font-bold">0</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500">PHI (Σ OVERLAP)</p>
+                            <p id="phiText" class="text-2xl font-mono font-bold text-blue-400">0.000</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 text-yellow-400">QUOTIENT DISTANCE (D)</p>
+                            <p id="distText" class="text-2xl font-mono font-bold text-yellow-400">0.000</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization (Center) -->
+            <div class="lg:col-span-9 space-y-6">
+                <!-- Perspective Manifold -->
+                <div class="metric-card p-2 rounded-2xl">
+                    <div class="absolute top-6 left-6 z-10">
+                        <span class="px-3 py-1 bg-black/50 backdrop-blur rounded-full text-[10px] font-bold border border-white/10">TOPOLOGICAL SUBSTRATE (FCC)</span>
+                    </div>
+                    <canvas id="substrateCanvas" class="w-full aspect-[16/9] lg:aspect-[21/9] cursor-crosshair"></canvas>
+                </div>
+
+                <!-- Graphs -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="metric-card p-4 rounded-2xl h-64">
+                        <canvas id="fitnessChart"></canvas>
+                    </div>
+                    <div class="metric-card p-4 rounded-2xl h-64">
+                        <canvas id="entropyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Footer -->
+        <div class="mt-6 metric-card p-4 rounded-2xl font-mono text-[10px] h-24 overflow-y-auto" id="simLog">
+            <div>> SYSTEM INITIALIZED. WAITING FOR USER ACTION.</div>
+            <div>> OMEGA PROTOCOL V30.1 READY. ALIGNING WITH QUOTIENT METRIC THEOREM.</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTS (Omega Protocol v30.1) ---
+        const PHI_0 = 0.01;
+        const GENOME_SIZE = 12;
+        const N_POPS = 12;
+        const POP_SIZE = 8; 
+        const WIDTH = 2000;
+        const HEIGHT = 1000;
+        const ALPHA_FS = 1/137.036; // Fine-structure constant coupling
+
+        // --- STATE ---
+        let sim = {
+            running: false,
+            gen: 0,
+            mu: 0.005,
+            gravity: 0.5,
+            citActive: false,
+            citGen: 0,
+            phiAvg: 0.1,
+            distance: 0,
+            populations: []
+        };
+
+        // --- INITIALIZATION ---
+        const canvas = document.getElementById('substrateCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+
+        function initPops() {
+            sim.populations = [];
+            for (let p = 0; p < N_POPS; p++) {
+                let pop = {
+                    id: p,
+                    color: `hsl(${(p * 360) / N_POPS}, 70%, 50%)`,
+                    agents: []
+                };
+                let centerX = Math.random() * WIDTH;
+                let centerY = Math.random() * HEIGHT;
+
+                for (let a = 0; a < POP_SIZE; a++) {
+                    pop.agents.push({
+                        x: centerX + (Math.random() - 0.5) * 100,
+                        y: centerY + (Math.random() - 0.5) * 100,
+                        genome: Array.from({length: GENOME_SIZE}, () => Math.random() > 0.5 ? 1 : 0),
+                        fitness: 0,
+                        phi: 0.1,
+                        phi_delta: 0 // Log-ratio asymmetry
+                    });
+                }
+                sim.populations.push(pop);
+            }
+        }
+
+        // --- MATH / PROTOCOL (Updated to v30.1) ---
+        function calculateOmegaFitness(agent) {
+            // Emergent consensus scale Phi_ij (Symmetric overlap)
+            const phi_s = agent.phi;
+            
+            // Asymmetry field phi_delta (Log-ratio)
+            // Induced by mismatch in 'virtual pair' genome bits
+            const phi_delta = (agent.genome.filter(b => b === 1).length - agent.genome.filter(b => b === 0).length) / GENOME_SIZE;
+            agent.phi_delta = phi_delta;
+
+            // Quotient Metric Action: Density * (1/Phi^2) + HOLP Correction
+            // From Whitepaper: G_00 ~ 2 * grad^2(phi)
+            const density = agent.genome.reduce((a, b) => a + b, 0) / GENOME_SIZE;
+            const coupling = ALPHA_FS * (1 / (phi_s * phi_s));
+
+            // Cit+ Phase Stabilizer (Topological impedance correction)
+            let citBonus = (sim.citActive && agent.genome[4] === 1) ? 0.4 : 0;
+
+            return (density * coupling * 0.1) + citBonus;
+        }
+
+        function getQuotientDistance(phi) {
+            // Path-infimum metric: D = -l_P * ln(Phi)
+            return -Math.log(Math.max(phi, PHI_0));
+        }
+
+        // --- SIMULATION LOOP ---
+        function update() {
+            if (!sim.running) return;
+
+            sim.gen += 10;
+            let totalPhi = 0;
+            let count = 0;
+
+            // Trigger Cit+ Phase Transition
+            if (!sim.citActive && sim.gen > 30000) {
+                if (Math.random() < 0.05) {
+                    sim.citActive = true;
+                    sim.citGen = sim.gen;
+                    log(`TOPOLOGICAL PHASE TRANSITION: Cit+ emerged at gen ${sim.gen}`, 'success');
+                    document.getElementById('citIndicator').classList.remove('hidden');
+                }
+            }
+
+            sim.populations.forEach(pop => {
+                let avgX = pop.agents.reduce((s, a) => s + a.x, 0) / POP_SIZE;
+                let avgY = pop.agents.reduce((s, a) => s + a.y, 0) / POP_SIZE;
+
+                pop.agents.forEach(agent => {
+                    // 1. Mutation (Lattice Polarization)
+                    agent.genome = agent.genome.map(bit => Math.random() < sim.mu ? 1 - bit : bit);
+
+                    // 2. Update Local Consensus (Phi)
+                    // Higher consensus = lower distance = more stable manifold
+                    agent.phi = 0.2 + (0.7 * (agent.genome.filter(b => b === 1).length / GENOME_SIZE));
+                    totalPhi += agent.phi;
+                    count++;
+
+                    // 3. Physics: Conformal Gradient (Move toward high consensus)
+                    const fitness = calculateOmegaFitness(agent);
+                    agent.fitness = fitness;
+
+                    // Pull toward cluster center (Lattice Close-Packing)
+                    agent.x += (avgX - agent.x) * (sim.gravity * 0.05);
+                    agent.y += (avgY - agent.y) * (sim.gravity * 0.05);
+
+                    // Random drift (Virtual Pair Fluctuations)
+                    agent.x += (Math.random() - 0.5) * 5;
+                    agent.y += (Math.random() - 0.5) * 5;
+
+                    // Screen Wrap (Toroidal Topology)
+                    agent.x = (agent.x + WIDTH) % WIDTH;
+                    agent.y = (agent.y + HEIGHT) % HEIGHT;
+                });
+            });
+
+            sim.phiAvg = totalPhi / count;
+            sim.distance = getQuotientDistance(sim.phiAvg);
+
+            updateUI();
+            draw();
+            updateCharts();
+
+            requestAnimationFrame(update);
+        }
+
+        // --- DRAWING ---
+        function draw() {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+            // Draw Topological Fields (FCC Substrate)
+            sim.populations.forEach(pop => {
+                let avgX = pop.agents.reduce((s, a) => s + a.x, 0) / POP_SIZE;
+                let avgY = pop.agents.reduce((s, a) => s + a.y, 0) / POP_SIZE;
+
+                let gradient = ctx.createRadialGradient(avgX, avgY, 0, avgX, avgY, 400);
+                let color = pop.color.replace(')', ', 0.2)').replace('hsl', 'hsla');
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, 'transparent');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, WIDTH, HEIGHT);
+            });
+
+            // Draw Agents (Q-Regions)
+            sim.populations.forEach(pop => {
+                pop.agents.forEach(agent => {
+                    ctx.beginPath();
+                    // Radius reflects Conformal Scale
+                    ctx.arc(agent.x, agent.y, 4 + agent.fitness * 8, 0, Math.PI * 2);
+                    ctx.fillStyle = pop.color;
+
+                    // Cit+ Highlight (Topological Impedance Drop)
+                    if (sim.citActive && agent.genome[4] === 1) {
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = '#22c55e';
+                        ctx.fillStyle = '#22c55e';
+                    } else {
+                        ctx.shadowBlur = 0;
+                    }
+
+                    ctx.fill();
+                    ctx.closePath();
+                });
+            });
+        }
+
+        // --- UI & CHARTS ---
+        const fitCtx = document.getElementById('fitnessChart').getContext('2d');
+        const entCtx = document.getElementById('entropyChart').getContext('2d');
+
+        const fitnessChart = new Chart(fitCtx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Topological Fitness (Action)', borderColor: '#3b82f6', data: [], borderWidth: 2, pointRadius: 0 }] },      
+            options: { maintainAspectRatio: false, scales: { y: { grid: { color: '#222' } }, x: { display: false } }, plugins: { legend: { labels: { color: '#888' } } } }
+        });
+
+        const entropyChart = new Chart(entCtx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Quotient Metric Distance (D)', borderColor: '#eab308', data: [], borderWidth: 2, pointRadius: 0 }] },
+            options: { maintainAspectRatio: false, scales: { y: { grid: { color: '#222' } }, x: { display: false } }, plugins: { legend: { labels: { color: '#888' } } } }
+        });
+
+        function updateUI() {
+            document.getElementById('genText').textContent = Math.floor(sim.gen).toLocaleString();
+            document.getElementById('phiText').textContent = sim.phiAvg.toFixed(4);
+            document.getElementById('distText').textContent = sim.distance.toFixed(4);
+        }
+
+        function updateCharts() {
+            if (sim.gen % 500 === 0) {
+                let avgFit = sim.populations[0].agents.reduce((s, a) => s + a.fitness, 0) / POP_SIZE;
+                fitnessChart.data.labels.push(sim.gen);
+                fitnessChart.data.datasets[0].data.push(avgFit);
+
+                entropyChart.data.labels.push(sim.gen);
+                entropyChart.data.datasets[0].data.push(sim.distance);
+
+                if (fitnessChart.data.labels.length > 50) {
+                    fitnessChart.data.labels.shift();
+                    fitnessChart.data.datasets[0].data.shift();
+                    entropyChart.data.labels.shift();
+                    entropyChart.data.datasets[0].data.shift();
+                }
+                fitnessChart.update('none');
+                entropyChart.update('none');
+            }
+        }
+
+        function log(msg, type='info') {
+            const logEl = document.getElementById('simLog');
+            const entry = document.createElement('div');
+            entry.className = type === 'success' ? 'text-green-400 font-bold' : 'text-gray-500';
+            entry.textContent = `> [${new Date().toLocaleTimeString()}] ${msg}`;
+            logEl.prepend(entry);
+        }
+
+        // --- CONTROLS ---
+        document.getElementById('startBtn').onclick = () => {
+            sim.running = !sim.running;
+            document.getElementById('startBtn').textContent = sim.running ? 'PAUSE MANIFOLD' : 'RESUME MANIFOLD';
+            if (sim.running) update();
+        };
+
+        document.getElementById('resetBtn').onclick = () => location.reload();
+
+        document.getElementById('muRange').oninput = (e) => {
+            sim.mu = parseFloat(e.target.value);
+            document.getElementById('muVal').textContent = sim.mu.toFixed(3);
+        };
+
+        document.getElementById('gravityRange').oninput = (e) => {
+            sim.gravity = parseFloat(e.target.value);
+            document.getElementById('gravVal').textContent = sim.gravity.toFixed(1);
+        };
+
+        initPops();
+        draw();
+    </script>
+</body>
+</html>

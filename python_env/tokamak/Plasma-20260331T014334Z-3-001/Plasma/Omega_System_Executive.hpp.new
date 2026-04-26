@@ -1,0 +1,97 @@
+#ifndef OMEGA_SYSTEM_EXECUTIVE_HPP
+#define OMEGA_SYSTEM_EXECUTIVE_HPP
+
+/**
+ * ==============================================================================
+ * OMEGA SYSTEM EXECUTIVE (v15.4)
+ * Location: Root Directory
+ * * ROLE: The "Master Glue." It coordinates the Arbiter, Manager, Aggregator,
+ * and Black-Box into a unified, autonomous control loop.
+ * This file pulls from the exact file structure shown in your images.
+ * ==============================================================================
+ */
+
+#include "Governor.hpp"
+#include "Multi-Channel_Aggregator.hpp"
+#include "Phase_Arbiter.hpp"
+#include "Pulse_Phase_Manager.hpp"
+#include "Telemetry_Black-Box.hpp"
+
+namespace Omega {
+
+// System-wide constants for this diagnostic sector
+constexpr size_t CHANNEL_COUNT = 8;
+constexpr size_t TRIP_THRESHOLD = 3;
+
+class OmegaSystem {
+private:
+    // Core components linked from your file structure
+    GovernorAggregator<CHANNEL_COUNT, TRIP_THRESHOLD> aggregator;
+    TelemetryRecorder<CHANNEL_COUNT> recorder;
+    PulsePhaseManager phase_manager;
+    PhaseArbiter arbiter;
+
+    PulsePhase current_phase = PulsePhase::RAMP_UP;
+    bool system_latched = false;
+
+public:
+    /**
+     * MASTER EXECUTION CYCLE
+     * This is the single entry point for your 10kHz hardware loop.
+     */
+    typename GovernorAggregator<CHANNEL_COUNT, TRIP_THRESHOLD>::GlobalStatus
+    run_cycle(const std::array<double, CHANNEL_COUNT>& sensor_data,
+              const ReactorVitals& vitals,
+              bool watchdog_ok = true)
+    {
+        // 1. AUTO-PHASE DETECTION (Arbiter)
+        // Determines if we are in Ramp-up, Steady-State, or Ramp-Down
+        PulsePhase detected_phase = arbiter.determine_phase(vitals);
+
+        // 2. PARAMETER ADAPTATION (Phase Manager)
+        // If the Arbiter detects a phase shift, we update all thresholds instantly
+        if (detected_phase != current_phase) {
+            current_phase = detected_phase;
+           
+            // Fetch the specific safety limits for the new phase
+            PhaseParameters new_params = phase_manager.get_config_for_phase(current_phase);
+           
+            // Pass the new thresholds down to the Aggregator and its Governors
+            aggregator.update_thresholds(new_params);
+        }
+
+        // 3. VOTING & MONITORING (Aggregator)
+        // Runs Layer 0/1/2 logic across all channels and calculates the M-of-N vote
+        auto status = aggregator.tick(sensor_data, watchdog_ok);
+
+        // 4. BLACK-BOX RECORDING (Telemetry)
+        // Captures RCOD and Z-Scores for post-incident reconstruction
+        // Note: TelemetryRecorder now uses the getters in Governor.hpp
+        recorder.record(status, aggregator.get_governors());
+
+        // 5. UPDATE TRIP STATUS
+        if (status.global_trip_actuated) {
+            system_latched = true;
+        }
+
+        return status;
+    }
+
+    /**
+     * SYSTEM RESET
+     * Clears all filters and resets the safety state machine between pulses.
+     */
+    void reset() {
+        aggregator.reset_all();
+        system_latched = false;
+        current_phase = PulsePhase::RAMP_UP;
+    }
+
+    // Diagnostics for UI/Dashboard
+    bool is_tripped() const { return system_latched; }
+    PulsePhase get_active_phase() const { return current_phase; }
+};
+
+} // namespace Omega
+
+#endif // OMEGA_SYSTEM_EXECUTIVE_HPP

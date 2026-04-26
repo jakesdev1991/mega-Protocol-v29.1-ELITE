@@ -1,0 +1,24 @@
+{
+    "devices_automated": [
+        "Samsung Galaxy A16",
+        "iPhone 15 Pro",
+        "Google Pixel 8",
+        "Samsung Galaxy S24 Ultra",
+        "iPad Pro M4",
+        "Xiaomi 14 Ultra",
+        "OnePlus 12",
+        "Motorola Edge 50",
+        "Nothing Phone (2)",
+        "Xiaomi 14 Ultra",
+        "OnePlus 12",
+        "Motorola Edge 50",
+        "Nothing Phone (2)",
+        "Xiaomi 14 Ultra",
+        "OnePlus 12",
+        "Motorola Edge 50"
+    ],
+    "target_queue": [
+        "Nothing Phone (2)"
+    ],
+    "last_run": 0
+}

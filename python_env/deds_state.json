@@ -1,0 +1,173 @@
+{
+    "omega_os_development": {
+        "name": "omega_os_development",
+        "L_i": 1.0,
+        "last_run_time": 1776894529.7995493,
+        "R_i": 20.0,
+        "run_count": 13,
+        "base_cost": 3.0,
+        "is_emergency": true
+    },
+    "manifold_manager": {
+        "name": "manifold_manager",
+        "L_i": 1.0,
+        "last_run_time": 1776951520.7236998,
+        "R_i": 20.0,
+        "run_count": 0,
+        "base_cost": 2.0,
+        "is_emergency": true
+    },
+    "miner_scout": {
+        "name": "miner_scout",
+        "L_i": 1.0,
+        "last_run_time": 1777159066.228028,
+        "R_i": 20.0,
+        "run_count": 1314090,
+        "base_cost": 1.0,
+        "is_emergency": true
+    },
+    "universal_innovation": {
+        "name": "universal_innovation",
+        "L_i": 1.0,
+        "last_run_time": 1776940643.378604,
+        "R_i": 20.0,
+        "run_count": 28,
+        "base_cost": 2.0,
+        "is_emergency": true
+    },
+    "physics_markov_synthesis": {
+        "name": "physics_markov_synthesis",
+        "L_i": 0.5,
+        "last_run_time": 1776866648.106798,
+        "R_i": 0.0,
+        "run_count": 0,
+        "base_cost": 1.5,
+        "is_emergency": false
+    },
+    "co_evolution": {
+        "name": "co_evolution",
+        "L_i": 0.5511839491438992,
+        "last_run_time": 1776867630.4353654,
+        "R_i": 0.0,
+        "run_count": 7,
+        "base_cost": 1.0,
+        "is_emergency": false
+    },
+    "dual_manifold": {
+        "name": "dual_manifold",
+        "L_i": 0.9818885897897287,
+        "last_run_time": 1776868332.989282,
+        "R_i": 0.0,
+        "run_count": 16,
+        "base_cost": 1.0,
+        "is_emergency": false
+    },
+    "c_core_orchestrator": {
+        "name": "c_core_orchestrator",
+        "L_i": 0.35000202274322506,
+        "last_run_time": 1776793278.0914712,
+        "R_i": 0.0,
+        "run_count": 1,
+        "base_cost": 2.0,
+        "is_emergency": false
+    },
+    "tokamak": {
+        "name": "tokamak",
+        "L_i": 0.5,
+        "last_run_time": 1776793199.1227107,
+        "R_i": 0.0,
+        "run_count": 0,
+        "base_cost": 3.0,
+        "is_emergency": false
+    },
+    "sales_automation": {
+        "name": "sales_automation",
+        "L_i": 0.12521085253477093,
+        "last_run_time": 1776867875.3886852,
+        "R_i": 0.0,
+        "run_count": 4,
+        "base_cost": 1.5,
+        "is_emergency": false
+    },
+    "cross_domain": {
+        "name": "cross_domain",
+        "L_i": 0.350012535572052,
+        "last_run_time": 1776793303.1028268,
+        "R_i": 0.0,
+        "run_count": 1,
+        "base_cost": 2.0,
+        "is_emergency": false
+    },
+    "finance_day": {
+        "name": "finance_day",
+        "L_i": 0.2665062188148498,
+        "last_run_time": 1776861714.6220226,
+        "R_i": 0.0,
+        "run_count": 2,
+        "base_cost": 2.0,
+        "is_emergency": false
+    },
+    "finance_mid": {
+        "name": "finance_mid",
+        "L_i": 0.35000823688507077,
+        "last_run_time": 1776793293.0974214,
+        "R_i": 0.0,
+        "run_count": 1,
+        "base_cost": 2.0,
+        "is_emergency": false
+    },
+    "finance_long": {
+        "name": "finance_long",
+        "L_i": 0.3500103712081909,
+        "last_run_time": 1776793288.0954077,
+        "R_i": 0.0,
+        "run_count": 1,
+        "base_cost": 2.0,
+        "is_emergency": false
+    },
+    "biology_metabolism": {
+        "name": "biology_metabolism",
+        "L_i": 0.14702042934226983,
+        "last_run_time": 1776867870.1864629,
+        "R_i": 0.0,
+        "run_count": 4,
+        "base_cost": 1.5,
+        "is_emergency": false
+    },
+    "psychology": {
+        "name": "psychology",
+        "L_i": 0.35001498889923094,
+        "last_run_time": 1776793259.1712108,
+        "R_i": 0.0,
+        "run_count": 1,
+        "base_cost": 2.0,
+        "is_emergency": false
+    },
+    "sandbox_experimenter": {
+        "name": "sandbox_experimenter",
+        "L_i": 0.5,
+        "last_run_time": 1776793199.122715,
+        "R_i": 0.0,
+        "run_count": 0,
+        "base_cost": 4.0,
+        "is_emergency": false
+    },
+    "rcod_300m": {
+        "name": "rcod_300m",
+        "L_i": 0.5,
+        "last_run_time": 1776793199.1227152,
+        "R_i": 0.0,
+        "run_count": 0,
+        "base_cost": 10.0,
+        "is_emergency": false
+    },
+    "smollm_1_7b": {
+        "name": "smollm_1_7b",
+        "L_i": 0.5,
+        "last_run_time": 1776793199.122716,
+        "R_i": 0.0,
+        "run_count": 0,
+        "base_cost": 25.0,
+        "is_emergency": false
+    }
+}

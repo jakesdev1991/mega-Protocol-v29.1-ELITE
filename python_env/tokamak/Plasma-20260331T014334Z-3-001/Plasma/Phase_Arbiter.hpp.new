@@ -1,0 +1,40 @@
+#ifndef PHASE_ARBITER_HPP
+#define PHASE_ARBITER_HPP
+
+#include "Pulse_Phase_Manager.hpp"
+
+/**
+ * ==============================================================================
+ * PHASE ARBITER (v15.4)
+ * Role: Monitors reactor vitals to automatically shift pulse phases.
+ * ==============================================================================
+ */
+
+struct ReactorVitals {
+    double plasma_current_ma;   // Ip (MegaAmps)
+    double loop_voltage;        // Vloop (Volts)
+    bool equilibrium_locked;    // Magnetic feedback status
+};
+
+class PhaseArbiter {
+    PulsePhase internal_phase = PulsePhase::RAMP_UP;
+
+public:
+    PulsePhase determine_phase(const ReactorVitals& vitals) {
+        // AUTOMATIC TRANSITION LOGIC
+        // 1. Move to Steady State once current is high and stable
+        if (vitals.plasma_current_ma > 1.0 && vitals.equilibrium_locked) {
+            internal_phase = PulsePhase::STEADY_STATE;
+        } 
+        // 2. Move to Ramp Down if current starts to decay after being steady
+        else if (vitals.plasma_current_ma < 0.2 && internal_phase == PulsePhase::STEADY_STATE) {
+            internal_phase = PulsePhase::RAMP_DOWN;
+        }
+        
+        return internal_phase;
+    }
+
+    PulsePhase get_phase() const { return internal_phase; }
+};
+
+#endif // PHASE_ARBITER_HPP

@@ -1,0 +1,23 @@
+# Core AI & Computation
+torch>=2.0.0
+torchvision
+torchaudio
+pytorch-lightning>=2.0.0
+transformers>=4.31.0
+peft>=0.4.0
+datasets>=2.14.0
+bitsandbytes>=0.41.0
+numpy>=1.24.0
+
+# Hardware Extensions (Optional, uncomment as needed)
+# torch-directml  # For AMD Windows
+
+# UI & Tools
+customtkinter>=5.2.0
+pyperclip>=1.8.2
+requests>=2.31.0
+pyyaml>=6.0
+pydantic>=2.0.0
+
+# Testing
+pytest>=7.4.0

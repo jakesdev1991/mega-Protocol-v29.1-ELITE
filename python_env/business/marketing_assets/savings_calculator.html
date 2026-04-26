@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omega RCOD Savings Calculator</title>
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --bg: #0b0e14;
+            --card: #1a1f29;
+            --text: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .calculator {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 400px;
+            border: 1px solid #2d3646;
+        }
+        h2 { color: var(--primary); text-align: center; margin-bottom: 1.5rem; }
+        .input-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #a0aec0; }
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 6px;
+            border: 1px solid #2d3646;
+            background: #0b0e14;
+            color: white;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); background: #00b8e6; }
+        #results {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 6px;
+            display: none;
+        }
+        .savings { font-size: 1.4rem; font-weight: bold; color: #48bb78; }
+        .details { font-size: 0.85rem; color: #a0aec0; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2>Ω RCOD Calculator</h2>
+        <div class="input-group">
+            <label>Current Training Budget ($)</label>
+            <input type="number" id="budget" placeholder="e.g. 1000000">
+        </div>
+        <div class="input-group">
+            <label>Current Training Duration (Days)</label>
+            <input type="number" id="days" placeholder="e.g. 30">
+        </div>
+        <button onclick="calculateSavings()">Calculate Omega ROI</button>
+
+        <div id="results">
+            <div id="savings-label">Omega Estimated Savings:</div>
+            <div id="savings-amount" class="savings"></div>
+            <div id="new-duration" class="details"></div>
+        </div>
+    </div>
+
+    <script>
+        function calculateSavings() {
+            const budget = parseFloat(document.getElementById('budget').value);
+            const days = parseFloat(document.getElementById('days').value);
+            
+            if (isNaN(budget) || isNaN(days)) return;
+
+            // Based on RCOD's 92% compression and 4.2x speedup
+            const savings = budget * 0.92;
+            const newDays = days / 4.2;
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('savings-amount').innerText = '$' + savings.toLocaleString();
+            document.getElementById('new-duration').innerText = 'New Training Time: ' + newDays.toFixed(1) + ' Days';
+        }
+    </script>
+</body>
+</html>

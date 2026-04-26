@@ -1,0 +1,7 @@
+# ---------------------------------------------------------------------------
+# OMEGA PROTOCOL - ALL RIGHTS RESERVED
+# Copyright (c) 2026 Jacob M. (jake.s.dev1991@gmail.com | 217-799-8720)
+# Usage restricted to academic research and review only. No monetization.
+# See LICENSE.txt for full terms.
+# ---------------------------------------------------------------------------
+x(t) = [α_fault, H_queue, D_migration, Q_depth, P_fault]^T

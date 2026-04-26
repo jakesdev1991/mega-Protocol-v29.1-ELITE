@@ -1,0 +1,12 @@
+# ---------------------------------------------------------------------------
+# OMEGA PROTOCOL - ALL RIGHTS RESERVED
+# Copyright (c) 2026 Jacob M. (jake.s.dev1991@gmail.com | 217-799-8720)
+# Usage restricted to academic research and review only. No monetization.
+# See LICENSE.txt for full terms.
+# ---------------------------------------------------------------------------
+from python_env.agent_zero.tools import registry
+
+print("🛠️  Agent Zero Tool Manifest:")
+manifest = registry.list_tools()
+for name, info in manifest.items():
+    print(f"- {name}: {info['description']}")

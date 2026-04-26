@@ -1,0 +1,300 @@
+#include <iostream>
+#include <cmath>
+#include <array>
+#include <cstdint>
+#include <algorithm>
+
+// ==============================================================================
+// THE OMEGA PROTOCOL v15.0: TOKAMAK PLASMA SPIKE PREDICTOR
+// Lead Architect: Jacob See
+// Status: Hardened Specification / HLS-Ready
+// ==============================================================================
+
+namespace Config {
+    // Physical & Sensor Limits
+    constexpr double SIGNAL_MAX         = 100.0;
+    constexpr double SIGNAL_MIN         = -100.0;
+    constexpr double SENSOR_SLEW_LIMIT  = 100.0; // AI Tuned: 100.0 (prev 50.0)
+    constexpr double PLASMA_SLEW_LIMIT  = 25.0; 
+    constexpr double STARTUP_SLEW       = 3.0;   // Tightened safety bound
+    
+    // Flatline Detection
+    constexpr size_t FLATLINE_WIN       = 256;   
+    constexpr double LSB_NOISE_FLOOR    = 0.05;  // Thermal dither threshold
+    constexpr int    MIN_UNIQUE_VALS    = 4;     
+    
+    // Substrate Geometry
+    constexpr size_t NUM_NODES          = 10;
+    constexpr size_t NODE_DIM           = 32;    
+    constexpr double QUANTIZE_SCALE     = 20.0;
+    constexpr int    TOLERANCE_BANDS    = 1;    
+    
+    // Regime Thresholds (Normalized)
+    constexpr double FLOW_ENTER         = 0.10;  // AI Tuned: 0.10 (prev 0.15)
+    constexpr double SHOCK_LIMIT        = 0.50;  // AI Tuned: 0.50 (prev 0.70)
+    constexpr double MESO_RCOD_CONFIRM  = 0.30; 
+    constexpr double SPREAD_LIMIT       = 0.15; 
+    
+    // Statistical Gating
+    constexpr size_t BASELINE_WIN       = 128;   
+    constexpr double CUSUM_K            = 0.5;  
+    constexpr double CUSUM_H            = 5.0;   
+    constexpr double Z_GATE_LIMIT       = 1.5;  
+    constexpr int    STABILITY_STREAK   = 100;   // Ticks before baseline assimilation
+    
+    // Operational Policy
+    constexpr int VERIFIED_FLOW_TICKS   = 50;    
+    constexpr int BASELINE_TIMEOUT      = 10000; 
+    constexpr int PERSISTENCE_ENTER     = 3;
+    constexpr int PERSISTENCE_CLEAR     = 20; 
+    constexpr size_t TELEMETRY_DEPTH    = 64;    
+}
+
+enum class SystemMode : uint8_t {
+    INIT = 0,
+    WARMUP_SUBSTRATE,
+    WARMUP_BASELINE,
+    DEGRADED_NO_BASELINE, 
+    MONITORING,
+    PRE_ALARM_DRIFT,
+    ALARM_FRACTURE,       
+    TRIPPED,              
+    HARDWARE_FAULT        
+};
+
+enum FaultBit : uint32_t {
+    FAULT_NONE        = 0,
+    FAULT_NAN_INF     = 1 << 0,
+    FAULT_CLIPPING    = 1 << 1,
+    FAULT_SLEW        = 1 << 2,
+    FAULT_FLATLINE    = 1 << 3,
+    FAULT_WATCHDOG    = 1 << 4
+};
+
+struct GovernorPayload {
+    SystemMode mode = SystemMode::INIT;
+    bool fast_trip_actuation = false;
+    bool supervisory_warning = false;
+    uint32_t fault_mask = 0; 
+};
+
+// ==========================================
+// DETERMINISTIC UTILITIES
+// ==========================================
+
+template<typename T, size_t Capacity>
+class FastRing {
+    static_assert((Capacity & (Capacity - 1)) == 0, "Capacity must be power of 2");
+    std::array<T, Capacity> buffer{};
+    size_t head = 0;
+    size_t count = 0;
+public:
+    void push(T value) {
+        buffer[head] = value;
+        head = (head + 1) & (Capacity - 1);
+        if (count < Capacity) count++;
+    }
+    T get_from_oldest(size_t idx) const {
+        return buffer[( (head + Capacity - count) + idx ) & (Capacity - 1)];
+    }
+    size_t size() const { return count; }
+    bool full() const { return count == Capacity; }
+    void reset() { head = 0; count = 0; }
+};
+
+// ==========================================
+// SENSOR & SUBSTRATE CORE
+// ==========================================
+
+class InertialSubstrate {
+    struct Node {
+        FastRing<int, Config::NODE_DIM> ring;
+        double alpha = 1.0; 
+        double state = 0.0;
+        bool init = false;
+
+        void encode(double raw) {
+            state = !init ? raw : (alpha * raw) + ((1.0 - alpha) * state);
+            init = true;
+            ring.push(static_cast<int>(std::lround(state * Config::QUANTIZE_SCALE)));
+        }
+    };
+
+    std::array<Node, Config::NUM_NODES> nodes;
+    
+    void insertion_sort(std::array<int, Config::NUM_NODES>& arr) {
+        for (size_t i = 1; i < Config::NUM_NODES; ++i) {
+            int key = arr[i];
+            int j = static_cast<int>(i) - 1;
+            while (j >= 0 && arr[j] > key) { arr[j+1] = arr[j]; j--; }
+            arr[j+1] = key;
+        }
+    }
+
+public:
+    InertialSubstrate() {
+        for (size_t i = 0; i < Config::NUM_NODES; i++) 
+            nodes[i].alpha = 1.0 - (i * 0.07);
+    }
+
+    void process(double raw, double& rcod, double& spread) {
+        for (auto& n : nodes) n.encode(raw);
+        
+        std::array<int, Config::NUM_NODES> slice;
+        for (size_t n = 0; n < Config::NUM_NODES; ++n) 
+            slice[n] = nodes[n].ring.get_from_oldest(nodes[n].ring.size() - 1);
+        
+        insertion_sort(slice);
+        
+        int max_cluster = 1;
+        for (size_t i = 0; i < Config::NUM_NODES; ++i) {
+            size_t j = i;
+            while (j + 1 < Config::NUM_NODES && (slice[j+1] - slice[i]) <= Config::TOLERANCE_BANDS) ++j;
+            max_cluster = std::max(max_cluster, static_cast<int>((j - i) + 1));
+        }
+
+        // Ontological premise: RCOD is defined as:
+        // $$RCOD = 1.0 - \frac{Cluster_{max}}{N_{nodes}}$$
+        rcod = std::clamp(1.0 - (static_cast<double>(max_cluster) / Config::NUM_NODES), 0.0, 1.0);
+        spread = static_cast<double>(slice.back() - slice.front()) / Config::QUANTIZE_SCALE;
+    }
+
+    bool ready() const { return nodes[0].ring.full(); }
+    void reset() { for(auto& n : nodes) { n.ring.reset(); n.init = false; } }
+};
+
+// ==========================================
+// GOVERNOR IMPLEMENTATION
+// ==========================================
+
+class OmegaGovernor {
+    InertialSubstrate substrate;
+    FastRing<double, Config::BASELINE_WIN> baseline_buf;
+    FastRing<double, Config::FLATLINE_WIN> flatline_buf;
+
+    SystemMode mode = SystemMode::INIT;
+    uint32_t fault_mask = FAULT_NONE;
+    
+    double last_raw = 0.0;
+    bool has_last_raw = false;
+    int stability_streak = 0;
+    int baseline_ticks = 0;
+    int persistence_timer = 0;
+    
+    double s_pos = 0.0, s_neg = 0.0;
+    double b_sum = 0.0, b_sum_sq = 0.0;
+
+    void update_baseline(double val) {
+        if (baseline_buf.full()) {
+            double old = baseline_buf.get_from_oldest(0);
+            b_sum -= old; b_sum_sq -= (old * old);
+        }
+        baseline_buf.push(val);
+        b_sum += val; b_sum_sq += (val * val);
+    }
+
+    double calculate_z(double val) {
+        if (baseline_buf.size() < 10) return 0.0;
+        double n = static_cast<double>(baseline_buf.size());
+        double mean = b_sum / n;
+        double var = std::max(0.0001, (b_sum_sq / n) - (mean * mean));
+        return (val - mean) / std::sqrt(var);
+    }
+
+public:
+    GovernorPayload tick(double raw, bool watchdog_ok) {
+        GovernorPayload p;
+        
+        // 1. INTEGRITY GUARD (Scrutiny: Multi-Fault Bitmasking)
+        if (!watchdog_ok) fault_mask |= FAULT_WATCHDOG;
+        if (!std::isfinite(raw)) fault_mask |= FAULT_NAN_INF;
+        if (raw >= Config::SIGNAL_MAX || raw <= Config::SIGNAL_MIN) fault_mask |= FAULT_CLIPPING;
+        
+        double delta = has_last_raw ? std::abs(raw - last_raw) : 0.0;
+        if (delta > Config::SENSOR_SLEW_LIMIT) fault_mask |= FAULT_SLEW;
+
+        flatline_buf.push(raw);
+        if (flatline_buf.full()) {
+            double min_v = raw, max_v = raw;
+            for(size_t i=0; i<Config::FLATLINE_WIN; ++i) {
+                double v = flatline_buf.get_from_oldest(i);
+                if (v < min_v) min_v = v; if (v > max_v) max_v = v;
+            }
+            if ((max_v - min_v) < Config::LSB_NOISE_FLOOR) fault_mask |= FAULT_FLATLINE;
+        }
+
+        if (fault_mask != FAULT_NONE) {
+            mode = SystemMode::HARDWARE_FAULT;
+            p.mode = mode; p.fault_mask = fault_mask; p.fast_trip_actuation = true;
+            return p;
+        }
+
+        // 2. PHYSICAL FAST TRIP
+        if (delta > Config::PLASMA_SLEW_LIMIT) {
+            mode = SystemMode::TRIPPED;
+            p.mode = mode; p.fast_trip_actuation = true; return p;
+        }
+
+        // 3. SUBSTRATE PROCESSING
+        double rcod, spread;
+        substrate.process(raw, rcod, spread);
+        last_raw = raw; has_last_raw = true;
+
+        if (!substrate.ready()) {
+            mode = SystemMode::WARMUP_SUBSTRATE;
+            p.mode = mode; return p;
+        }
+
+        // 4. STABILITY GATING (Scrutiny: Consecutive Ticks Requirement)
+        bool tick_is_stable = (delta < Config::STARTUP_SLEW) && (rcod < Config::FLOW_ENTER);
+        if (tick_is_stable) stability_streak++; else stability_streak = 0;
+
+        double z = calculate_z(raw);
+
+        // Only allow baseline assimilation if we are in a safe monitoring mode
+        // and have maintained the stability streak.
+        if (mode == SystemMode::MONITORING || mode == SystemMode::WARMUP_BASELINE) {
+            if (stability_streak >= Config::STABILITY_STREAK && std::abs(z) < Config::Z_GATE_LIMIT) {
+                update_baseline(raw);
+            }
+        }
+
+        // 5. SUPERVISORY CONTROL
+        if (baseline_buf.full()) {
+            s_pos = std::max(0.0, s_pos + z - Config::CUSUM_K);
+            s_neg = std::max(0.0, s_neg - z - Config::CUSUM_K);
+            
+            bool drift = (s_pos > Config::CUSUM_H || s_neg > Config::CUSUM_H);
+            bool fracture = (rcod > Config::SHOCK_LIMIT && spread > Config::SPREAD_LIMIT);
+
+            if (fracture) {
+                persistence_timer++;
+                if (persistence_timer >= Config::PERSISTENCE_ENTER) mode = SystemMode::ALARM_FRACTURE;
+            } else if (drift) {
+                mode = SystemMode::PRE_ALARM_DRIFT;
+            } else if (tick_is_stable && std::abs(z) < 1.0) {
+                // Decay alarms if signal has returned to equilibrium
+                persistence_timer = 0;
+                s_pos *= 0.95; s_neg *= 0.95;
+                mode = SystemMode::MONITORING;
+            }
+        } else {
+            baseline_ticks++;
+            mode = (baseline_ticks > Config::BASELINE_TIMEOUT) ? 
+                    SystemMode::DEGRADED_NO_BASELINE : SystemMode::WARMUP_BASELINE;
+        }
+
+        p.mode = mode;
+        p.fast_trip_actuation = (mode == SystemMode::TRIPPED);
+        p.supervisory_warning = (mode == SystemMode::ALARM_FRACTURE || mode == SystemMode::PRE_ALARM_DRIFT);
+        return p;
+    }
+
+    void reset() {
+        substrate.reset(); baseline_buf.reset(); flatline_buf.reset();
+        mode = SystemMode::INIT; fault_mask = FAULT_NONE;
+        s_pos = 0.0; s_neg = 0.0; b_sum = 0.0; b_sum_sq = 0.0;
+        stability_streak = 0; baseline_ticks = 0; persistence_timer = 0;
+        has_last_raw = false;
+    }
+};

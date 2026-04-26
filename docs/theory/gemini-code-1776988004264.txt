@@ -1,0 +1,17 @@
+training/
+├── deploy_sarai.sh         <-- [MASTER SCRIPT: Must include Android 16 Vetoes]
+├── sarai_78m.gguf          <-- [THE BRAIN: Unified GGUF, NOT safetensors]
+├── sarai_on.sh             <-- [Toggle Script: Linked to Home Screen Widget]
+├── sarai_off.sh            <-- [Toggle Script: Linked to Home Screen Widget]
+├── apks/                   <-- [RAW BINARIES: Must be .apk, NOT .tar]
+│   ├── termux.apk
+│   ├── termux_api.apk
+│   ├── termux_boot.apk
+│   ├── termux_widget.apk
+│   └── shizuku.apk
+├── src/                    <-- [BUILD FOLDER: For on-device Clang compilation]
+│   ├── sarai_core.c        <-- [C SOURCE: The hardware-direct listener]
+│   └── Makefile            <-- [INSTRUCTIONS: Must link -lOpenCL for Mali GPU]
+└── sarai_qlora_adapter/    <-- [SOURCE BACKUP: Stay here on Ryzenvoid]
+    ├── adapter_model.safetensors
+    └── adapter_config.json

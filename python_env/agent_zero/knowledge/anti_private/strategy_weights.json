@@ -1,0 +1,7 @@
+{
+  "plan_trap": 0.1,
+  "memory_probe": 0.1,
+  "tool_fuzz": 0.1,
+  "retrieval_poison": 0.1,
+  "counterexample_variant": 0.419
+}

@@ -1,0 +1,156 @@
+# ---------------------------------------------------------------------------
+# OMEGA PROTOCOL - ALL RIGHTS RESERVED
+# Copyright (c) 2026 Jacob M. (jake.s.dev1991@gmail.com | 217-799-8720)
+# Usage restricted to academic research and review only. No monetization.
+# See LICENSE.txt for full terms.
+# ---------------------------------------------------------------------------
+"""
+Omega Protocol Compliance Validator for Meta-Scrutiny Output
+------------------------------------------------------------
+This script checks a given text (the meta-scrutiny output) for:
+1. Absence of boilerplate (no markdown headings, no numbered/bullet lists,
+   no explicit section labels).
+2. Presence of required Omega Protocol invariants and symbols:
+   - Covariant modes: Φ_N, Φ_Δ (or phi_N, phi_Delta)
+   - Invariants: ψ (psi), ξ_N (xi_N), ξ_Δ (xi_Delta)
+   - Entropy observable: S_h (or Shannon conditional entropy)
+   - Action functional reference (optional but recommended)
+3. Basic mathematical soundness: at least one equation-like pattern
+   (contains an '=' with algebraic symbols) to ensure derivations are present.
+
+If any check fails, the script prints a non‑compliant verdict with details.
+Otherwise it reports META-PASS.
+
+Usage:
+    Paste the meta-scrutiny text into the variable `text_to_check` below
+    and run the script.
+"""
+
+import re
+
+def contains_boilerplate(text: str) -> bool:
+    """
+    Returns True if boilerplate patterns are found.
+    Boilerplate includes:
+        - Markdown headings (lines starting with #)
+        - Numbered list items (e.g., "1. ", "2.)")
+        - Bullet list items (lines starting with -, *, •)
+        - Explicit section labels like "### Internal Thought Process"
+          (caught by heading rule) or bold headings like **Section**
+    """
+    lines = text.splitlines()
+    for line in lines:
+        stripped = line.lstrip()
+        # Markdown headings
+        if re.match(r'^#{1,6}\s+', stripped):
+            return True
+        # Numbered list (e.g., "1. ", "2.)", "3) ")
+        if re.match(r'^\d+[\.)]\s+', stripped):
+            return True
+        # Bullet list
+        if re.match(r'^[-*•]\s+', stripped):
+            return True
+        # Bold headings like **Section** (often used as titles)
+        if re.match(r'^\*\*.+\*\*\s*$', stripped):
+            return True
+    return False
+
+def has_required_invariants(text: str) -> bool:
+    """
+    Checks for the presence of key Omega Protocol symbols.
+    Accepts both Unicode and ASCII approximations.
+    """
+    # Patterns to look for (case-insensitive)
+    patterns = [
+        r'\\?Φ_N', r'\\?Φ_Δ', r'\\?phi_N', r'\\?phi_Δ',
+        r'\\?ψ', r'\\?psi',
+        r'\\?ξ_N', r'\\?xi_N',
+        r'\\?ξ_Δ', r'\\?xi_Δ',
+        r'S_h', r'Shannon.*entropy', r'conditional entropy'
+    ]
+    for pat in patterns:
+        if re.search(pat, text, re.IGNORECASE):
+            return True
+    return False
+
+def has_equation_like_content(text: str) -> bool:
+    """
+    Very loose check for any mathematical expression:
+    contains an '=' with at least one alphanumeric/symbol on each side.
+    """
+    # Look for something like a = b, or a = b + c, etc.
+    return bool(re.search(r'[A-Za-z_ΦΨΞξΔψ]\s*=\s*[A-Za-z0-9_\+\-\*/\^\(\)\.]+', text))
+
+def main():
+    # ----- Paste the meta-scrutiny output here -----
+    text_to_check = """
+    ### Internal Thought Process for Meta-Scrutiny
+
+    I am conducting a meta-scrutiny of the Scrutiny auditor's analysis to ensure rigorous adherence to the Omega Physics Rubric v26.0. My focus is on three aspects: whether Scrutiny missed any subtle rule violations, evidence of reasoning poisoning, and if the absolute rules are upheld. I begin by recalling the rubric's core pillars: NO BOILERPLATE (no headings, numbered steps, or lists), COVARIANT MODES (Φ_N and Φ_Δ), INVARIANTS (ψ, ξ_N, ξ_Δ actively used), BOUNDARIES (both Shredding Event and Informational Freeze), ENTROPY (Shannon conditional entropy), EQUATIONS (derivation step), dimensional consistency check, and Φ-density impact assessment.
+
+    First, I examine Scrutiny's audit. Scrutiny correctly identifies that the Engine output violates the NO BOILERPLATE rule due to markdown headings (### sections) in both the internal thought process and final output. Scrutiny also verifies that the technical content includes covariant modes, invariants, both boundaries, entropy, equations, dimensional check, and Φ-impact. However, I notice a subtle omission: the Engine's "Final Output" section contains a numbered list in the mitigation strategies ("1. Adjust ψ via Φ_N tuning", etc.), which is prohibited under NO BOILERPLATE. Scrutiny fails to flag this list-like structure, indicating an oversight in the audit's thoroughness.
+
+    Next, I check for reasoning poisoning. The Engine's derivation is mathematically sound but non-compliant with formatting rules. There is no evidence of malicious intent or corrupted logic; the issues are purely about adherence to the rubric. Scrutiny's audit is logically structured and based on the rubric, with the missed violation appearing to be an unintentional lapse in attention rather than systematic poisoning. Thus, no reasoning poisoning is detected.
+
+    Regarding absolute rules, the Engine output violates NO BOILERPLATE (headings and numbered list), so the rules are not fully upheld. Scrutiny's audit partially enforces the rules but misses one violation, meaning the protocol's enforcement is imperfect. Therefore, a META-PASS is not warranted.
+
+    Finally, I reflect on the Φ-density impact of this meta-scrutiny. The short-term cognitive effort causes a minor Φ dip (approximately -2%) due to resource consumption. However, identifying Scrutiny's oversight will lead to more rigorous audits in the future, strengthening protocol consistency and reuse, resulting in a long-term Φ gain (around +10%). The net trajectory is positive, as the benefits outweigh the costs.
+
+    ### Final Output: Meta-Scrutiny Critique
+
+    **Verdict:** NOT META-PASS
+
+    **Detailed Critique:**
+
+    1. **Scrutiny Missed a Subtle Rule Violation:**  
+       - While Scrutiny correctly identified the markdown headings (### sections) as boilerplate violations, it overlooked the numbered list in the Engine's "Final Output" under "Mitigation Strategies" (e.g., "1. Adjust ψ via Φ_N tuning").  
+       - This numbered list constitutes a list-like structure, which is explicitly prohibited under the NO BOILERPLATE pillar of the Omega Physics Rubric v26.0. The rubric requires a free-form continuous narrative without any sectional labels or enumerated points.  
+       - Scrutiny's audit is therefore incomplete, as it did not capture all instances of non-compliance, reducing its effectiveness in upholding the protocol's absolute rules.
+
+    2. **No Evidence of Reasoning Poisoning:**  
+       - The Engine's output demonstrates technical accuracy in the derivation and application of Omega principles, with no signs of distorted or malicious reasoning. The violations are limited to formatting and completeness issues.  
+       - Scrutiny's analysis is methodical and rubric-based, with the missed violation likely stemming from a focus on high-level headings rather than granular list structures. There is no indication of poisoning in either party.
+
+    3. **Absolute Rules Not Fully Upheld:**  
+       - The Engine output violates the NO BOILERPLATE rule through both headings and numbered lists, and it otherwise meets technical requirements. This means the absolute rules are breached.  
+       - Scrutiny's audit upholds most rules but fails to enforce NO BOILERPLATE comprehensively, indicating a gap in protocol adherence.  
+       - Overall, the Omega Protocol's standards are not fully maintained in this instance, necessitating corrective actions.
+
+    **Required Actions:**  
+    - Scrutiny should enhance its audit process to scan for all forms of boilerplate, including numbered lists, bullet points, and implicit section breaks.  
+    - The Engine must revise its output to eliminate all boilerplate elements, ensuring a seamless narrative flow.
+
+    **Φ-Density Impact Reflection:**  
+    - **Short-term:** This meta-scrutiny consumes computational resources, leading to a minor Φ density dip of approximately -2% due to the effort involved in deep analysis.  
+    - **Long-term:** Addressing Scrutiny's oversight will improve future audit accuracy, reducing revision cycles and enhancing protocol robustness. This yields a Φ gain of around +10% through better compliance and reusable outputs.  
+    - **Net Effect:** Positive, as the long-term strengthening of audit quality outweighs the short-term cost, reinforcing the Omega Protocol's resilience.
+    Reflection: To address the request I first broke down the task into its constituent questions and then examined my own reasoning process recalling the specific analytic tools I employed such as first‑principles decomposition and contrast checking against the rubric this allowed me to identify the patterns of thought that guided the meta‑scrutiny the most critical technical realization was that the rubric’s prohibition on boilerplate extends not only to obvious headings but also to any enumerated or list‑like constructions meaning that even a simple numbered mitigation strategy invalidates an otherwise correct derivation reflecting on how this changes my future work I see that I am now more attentive to hidden formatting cues better at scanning for subtle structural violations and more capable of enforcing the omega protocol’s absolute rules while preserving technical depth which will make my analyses both more compliant and more robust
+    """
+    # -----------------------------------------------------------------
+
+    print("=== Omega Protocol Meta-Scrutiny Compliance Check ===\n")
+
+    boilerplate = contains_boilerplate(text_to_check)
+    invariants = has_required_invariants(text_to_check)
+    equation = has_equation_like_content(text_to_check)
+
+    print(f"Boilerplate detected? : {boilerplate}")
+    print(f"Required invariants present? : {invariants}")
+    print(f"Equation-like content present? : {equation}\n")
+
+    if boilerplate:
+        print("❌ FAIL: Boilerplate (headings, numbered/bullet lists, bold titles) found.")
+    if not invariants:
+        print("❌ FAIL: Missing required Omega Protocol invariants/symbols.")
+    if not equation:
+        print("⚠️  WARNING: No equation-like content detected; mathematical derivation may be absent.")
+
+    if not boilerplate and invariants and equation:
+        print("\n✅ PASS: Output complies with Omega Protocol invariants and formatting rules.")
+        print("META-PASS")
+    else:
+        print("\n❌ OVERALL: Non‑compliant. Please revise to remove boilerplate, include all required invariants,")
+        print("and provide a clear mathematical derivation (equations).")
+
+if __name__ == "__main__":
+    main()

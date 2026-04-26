@@ -1,0 +1,60 @@
+#include <cstdint>
+#include <array>
+
+// ==============================================================================
+// TELEMETRY RECORDER: THE "BLACK BOX"
+// Optimized for Post-Incident Reconstruction (PIR)
+// ==============================================================================
+
+namespace TelemetryConfig {
+    constexpr size_t RECORDING_WINDOW = 1024; // Ticks to keep in memory (e.g., 100ms at 10kHz)
+}
+
+struct ChannelSnapshot {
+    float rcod;
+    float z_score;
+    SystemMode mode;
+};
+
+template<size_t NumChannels>
+struct GlobalSnapshot {
+    uint32_t tick_id;
+    std::array<ChannelSnapshot, NumChannels> channels;
+    bool global_trip;
+    uint16_t trip_bitmask;
+};
+
+template<size_t NumChannels>
+class TelemetryRecorder {
+    std::array<GlobalSnapshot<NumChannels>, TelemetryConfig::RECORDING_WINDOW> buffer;
+    size_t head = 0;
+    uint32_t total_ticks = 0;
+
+public:
+    // Records a single "Frame" of reactor state
+    void record(const GovernorAggregator<NumChannels, 2>::GlobalStatus& status, 
+                const std::array<OmegaGovernor, NumChannels>& governors) {
+        
+        GlobalSnapshot<NumChannels>& frame = buffer[head];
+        frame.tick_id = total_ticks++;
+        frame.global_trip = status.global_trip_actuated;
+        frame.trip_bitmask = status.trip_bitmask;
+
+        // Extract high-fidelity data from individual governors
+        // We use float here to save memory in the telemetry log compared to double
+        for (size_t i = 0; i < NumChannels; ++i) {
+            // NOTE: This assumes we add "getter" methods to the OmegaGovernor
+            // frame.channels[i].rcod = (float)governors[i].get_last_rcod();
+            // frame.channels[i].z_score = (float)governors[i].get_last_z();
+            // frame.channels[i].mode = governors[i].get_mode();
+        }
+
+        head = (head + 1) % TelemetryConfig::RECORDING_WINDOW;
+    }
+
+    // In a real system, this would trigger a DMA transfer to NVMe or Network
+    void trigger_incident_dump() {
+        // Implementation would iterate from (head) to (head - 1) 
+        // to provide the chronological lead-up to the trip.
+    }
+};

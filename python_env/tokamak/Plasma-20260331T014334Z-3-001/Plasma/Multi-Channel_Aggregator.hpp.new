@@ -1,0 +1,71 @@
+#include <array>
+
+// ==============================================================================
+// GOVERNOR AGGREGATOR (M-of-N Voting Logic)
+// Optimized for Multi-Diagnostic Sensor Fusion
+// ==============================================================================
+
+template<size_t NumChannels, size_t VoteThreshold>
+class GovernorAggregator {
+    static_assert(VoteThreshold <= NumChannels, "Threshold cannot exceed channel count.");
+
+    std::array<OmegaGovernor, NumChannels> governors;
+    
+    struct GlobalStatus {
+        SystemMode aggregate_mode = SystemMode::INIT;
+        bool global_trip_actuated = false;
+        bool any_supervisory_warning = false;
+        uint16_t trip_bitmask = 0; // Identifies which specific sensors are firing
+        uint16_t fault_bitmask = 0;
+    };
+
+public:
+    GlobalStatus tick(const std::array<double, NumChannels>& signals, bool watchdog_ok) {
+        GlobalStatus status;
+        int trip_votes = 0;
+        int fault_count = 0;
+
+        for (size_t i = 0; i < NumChannels; ++i) {
+            auto payload = governors[i].tick(signals[i], watchdog_ok);
+
+            // 1. Track individual Trip states
+            if (payload.fast_trip_actuation) {
+                status.trip_bitmask |= (1 << i);
+                trip_votes++;
+            }
+
+            // 2. Track individual Hardware Faults
+            if (payload.mode == SystemMode::HARDWARE_FAULT) {
+                status.fault_bitmask |= (1 << i);
+                fault_count++;
+            }
+
+            // 3. Track Supervisory Warnings (Fracture/Drift)
+            if (payload.supervisory_warning) {
+                status.any_supervisory_warning = true;
+            }
+        }
+
+        // --- VOTING LOGIC ---
+        // We only actuate a global dump if M-of-N sensors agree.
+        if (trip_votes >= VoteThreshold) {
+            status.global_trip_actuated = true;
+            status.aggregate_mode = SystemMode::TRIPPED;
+        } 
+        else if (fault_count == NumChannels) {
+            status.aggregate_mode = SystemMode::HARDWARE_FAULT;
+        }
+        else if (status.any_supervisory_warning) {
+            status.aggregate_mode = SystemMode::ALARM_FRACTURE;
+        }
+        else {
+            status.aggregate_mode = SystemMode::MONITORING;
+        }
+
+        return status;
+    }
+
+    void reset_all() {
+        for (auto& g : governors) g.reset();
+    }
+};
