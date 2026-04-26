@@ -1,0 +1,14 @@
+OMEGA PROTOCOL - PUBLIC PROPRIETARY LICENSE
+Copyright (c) 2026 Jacob M.
+All Rights Reserved.
+
+NOTICE TO ALL USERS:
+This repository is publicly visible for the purpose of academic review, theoretical verification, and the Google.org Impact Challenge.
+
+PROHIBITED ACTIONS:
+1. No part of this software, including the Omega Protocol (v29.1-ELITE) theory, C-Core metrics, or trained weights, may be used for commercial purposes without explicit written consent.
+2. Modification, redistribution, or derivation of commercial products from this codebase is strictly forbidden.
+3. No monetization of any part of this IP is permitted.
+
+CONTACT FOR PERMISSION:
+Jacob M. | jake.s.dev1991@gmail.com | 217-799-8720
