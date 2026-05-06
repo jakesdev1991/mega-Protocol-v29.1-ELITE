@@ -81,7 +81,21 @@ class QdrantMemorySystem:
             logger.error(f"Error storing memory in Qdrant: {e}")
             return False
 
-    def search(self, query: str, limit: int = 10, rerank: bool = True) -> List[Dict[str, Any]]:
+    def _build_filter(self, filters: Optional[Dict[str, Any]] = None):
+        """Builds an exact-match Qdrant payload filter for metadata keys."""
+        if not filters:
+            return None
+        return rest.Filter(
+            must=[
+                rest.FieldCondition(
+                    key=f"metadata.{key}",
+                    match=rest.MatchValue(value=value)
+                )
+                for key, value in filters.items()
+            ]
+        )
+
+    def search(self, query: str, limit: int = 10, rerank: bool = True, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Searches memories and optionally reranks them."""
         try:
             query_vector = self.embedding_model.encode([query], task="retrieval")[0].tolist()
@@ -89,6 +103,7 @@ class QdrantMemorySystem:
             search_result = self.client.query_points(
                 collection_name=self.collection_name,
                 query=query_vector,
+                query_filter=self._build_filter(filters),
                 limit=limit * 2 if rerank else limit,
                 with_payload=True
             ).points
