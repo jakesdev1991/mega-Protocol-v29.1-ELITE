@@ -9,6 +9,11 @@ This directory serves as the central nexus for the Omega Protocol's foundational
 - **Engineering Path:** Core Theory & Documentation (Kernel OS)
 - **Routing Logic:** This is the canonical, foundational document. It is invoked as a primary source by developers, researchers, or automated documentation systems. It routes directly to the central documentation portal or wiki, serving as the root node in the project's knowledge graph.
 
+
+### `INFORMATIONAL_SUBSTRATE_COSMOS.md`
+- **Engineering Path:** Core Theory & Documentation (Kernel OS)
+- **Routing Logic:** This whitepaper extends the Omega Protocol cosmology layer, mapping ontological inversion, informational stiffness, quark shredding, black-hole merger entropy, causal breaks, thermal time, and Mark 1 Attractor galaxy evolution into a single peer-level narrative. It routes alongside `OMEGA_PROTOCOL_v3.1_ULTIMATE.md` as a human-readable synthesis for reviewers evaluating the protocol's quantum-geometry and cosmological claims.
+
 ### `GEMINI.md`
 - **Engineering Path:** Core Theory & Documentation (Kernel OS)
 - **Routing Logic:** This file documents the GEMINI subsystem's architecture and API. It is invoked by developers integrating with or maintaining the GEMINI system. It routes to the technical documentation portal, linking as a child node of the primary theory documentation.
