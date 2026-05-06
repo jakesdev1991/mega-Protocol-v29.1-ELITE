@@ -42,6 +42,12 @@ class MemoryRecord(BaseModel):
     source: str
     content: str
     metadata: dict[str, Any] = Field(default_factory=dict)
+    stiffness_s: float | None = Field(default=None, ge=0.0, le=1.0)
+    reverse_overlap_r: float | None = Field(default=None, ge=0.0, le=1.0)
+    dissonance_delta: float | None = Field(default=None, ge=0.0, le=1.0)
+    domain_signature: str | None = None
+    source_kind: str | None = None
+    normalized_content: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
 
 

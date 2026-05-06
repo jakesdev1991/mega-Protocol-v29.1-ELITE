@@ -12,6 +12,8 @@ import json
 import sqlite3
 from pathlib import Path
 
+from LTM.omega_tensor import normalize_to_omega_tensor
+
 from .models import MemoryRecord, SanitizedPromotion
 
 
@@ -67,12 +69,15 @@ class SharedConsensusMemory:
             **promotion.metadata,
             **(metadata or {}),
         }
-        record = MemoryRecord(source=source, content=promotion.content, metadata=merged_metadata)
+        omega_tensor = normalize_to_omega_tensor(promotion.content, merged_metadata)
+        merged_metadata.update(omega_tensor)
+        record = MemoryRecord(source=source, content=promotion.content, metadata=merged_metadata, **omega_tensor)
         self.append(record)
         return record
 
     def append(self, record: MemoryRecord) -> None:
         """Directly append a record to shared memory (legacy/unfiltered)."""
+        stored_metadata = _metadata_with_omega_tensor(record)
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -81,7 +86,7 @@ class SharedConsensusMemory:
                     record.entry_id,
                     record.source,
                     record.content,
-                    json.dumps(record.metadata),
+                    json.dumps(stored_metadata),
                     record.created_at.isoformat() if hasattr(record.created_at, "isoformat") else record.created_at,
                 ),
             )
@@ -104,16 +109,41 @@ class SharedConsensusMemory:
 
         records: list[MemoryRecord] = []
         for entry_id, source, content, metadata, created_at in rows:
+            parsed_metadata = json.loads(metadata) if metadata else {}
             records.append(
                 MemoryRecord(
                     entry_id=entry_id,
                     source=source,
                     content=content,
-                    metadata=json.loads(metadata) if metadata else {},
+                    metadata=parsed_metadata,
                     created_at=created_at,
+                    **_omega_tensor_from_metadata(parsed_metadata),
                 )
             )
         return records
+
+
+_OMEGA_TENSOR_FIELDS = (
+    "stiffness_s",
+    "reverse_overlap_r",
+    "dissonance_delta",
+    "domain_signature",
+    "source_kind",
+    "normalized_content",
+)
+
+
+def _omega_tensor_from_metadata(metadata: dict) -> dict:
+    return {key: metadata[key] for key in _OMEGA_TENSOR_FIELDS if key in metadata}
+
+
+def _metadata_with_omega_tensor(record: MemoryRecord) -> dict:
+    metadata = dict(record.metadata)
+    for key in _OMEGA_TENSOR_FIELDS:
+        value = getattr(record, key)
+        if value is not None:
+            metadata[key] = value
+    return metadata
 
 
 class RoleLocalMemory:
