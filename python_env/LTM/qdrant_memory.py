@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from configs.config import config
 from utils.logger import logger
+from LTM.omega_tensor import normalize_to_omega_tensor
 
 class QdrantMemorySystem:
     def __init__(self):
@@ -54,7 +55,9 @@ class QdrantMemorySystem:
     def add_memory(self, content: str, metadata: Optional[Dict[str, Any]] = None):
         """Embeds and stores a memory in Qdrant."""
         try:
-            vector = self.embedding_model.encode([content], task="retrieval")[0].tolist()
+            safe_metadata = metadata or {}
+            omega_tensor = normalize_to_omega_tensor(content, safe_metadata)
+            vector = self.embedding_model.encode([omega_tensor["normalized_content"]], task="retrieval")[0].tolist()
             
             # Generate a point ID (can be incremental or UUID)
             # For simplicity, we'll let Qdrant handle IDs if possible or use a hash
@@ -69,8 +72,9 @@ class QdrantMemorySystem:
                         vector=vector,
                         payload={
                             "content": content,
-                            "metadata": metadata or {},
-                            "created_at": str(np.datetime64('now'))
+                            "metadata": safe_metadata,
+                            "created_at": str(np.datetime64('now')),
+                            **omega_tensor,
                         }
                     )
                 ]
@@ -93,11 +97,20 @@ class QdrantMemorySystem:
                 with_payload=True
             ).points
             
+            tensor_fields = (
+                "stiffness_s",
+                "reverse_overlap_r",
+                "dissonance_delta",
+                "domain_signature",
+                "source_kind",
+                "normalized_content",
+            )
             results = [
                 {
                     "content": hit.payload["content"],
                     "metadata": hit.payload["metadata"],
-                    "score": hit.score
+                    "score": hit.score,
+                    **{key: hit.payload.get(key) for key in tensor_fields if key in hit.payload},
                 }
                 for hit in search_result
             ]
