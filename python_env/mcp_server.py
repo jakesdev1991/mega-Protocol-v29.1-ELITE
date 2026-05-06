@@ -9,6 +9,9 @@ from mcp.server.fastmcp import FastMCP
 import os
 import sys
 
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+from LTM.leakage_gate import GLOBAL_LEAKAGE_GATE
+
 # Initialize FastMCP server
 mcp = FastMCP("Omega_Workspace_Filesystem")
 
@@ -62,6 +65,11 @@ def get_file_info(path: str) -> dict:
         }
     except Exception as e:
         return {"error": str(e)}
+
+@mcp.tool(name="memory-health")
+def memory_health() -> dict:
+    """Reports leakage-gate statistics for memory retrieval health."""
+    return GLOBAL_LEAKAGE_GATE.stats()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Omega MCP Filesystem Server")

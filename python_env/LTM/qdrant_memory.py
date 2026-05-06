@@ -19,13 +19,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from configs.config import config
 from utils.logger import logger
+from LTM.leakage_gate import GLOBAL_LEAKAGE_GATE, ZScoreLeakageGate
 
 class QdrantMemorySystem:
-    def __init__(self):
+    def __init__(self, leakage_gate: Optional[ZScoreLeakageGate] = None):
         self.client = QdrantClient(path=str(config.qdrant_path))
         self.collection_name = "omega_memories"
         self.embedding_model_name = config.ltm_embedding
         self.reranker_model_name = config.reranker_model
+        self.leakage_gate = leakage_gate or GLOBAL_LEAKAGE_GATE
         
         logger.info(f"Initializing Qdrant Memory System with {self.embedding_model_name}")
         self.embedding_model = SentenceTransformer(self.embedding_model_name, trust_remote_code=True)
@@ -81,8 +83,15 @@ class QdrantMemorySystem:
             logger.error(f"Error storing memory in Qdrant: {e}")
             return False
 
-    def search(self, query: str, limit: int = 10, rerank: bool = True) -> List[Dict[str, Any]]:
-        """Searches memories and optionally reranks them."""
+    def search_memory(
+        self,
+        query: str,
+        limit: int = 10,
+        rerank: bool = True,
+        current_state: float = 0.35,
+        filter_disallowed: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Search memories, rerank them, and apply leakage-gate rescoring."""
         try:
             query_vector = self.embedding_model.encode([query], task="retrieval")[0].tolist()
             
@@ -96,8 +105,9 @@ class QdrantMemorySystem:
             results = [
                 {
                     "content": hit.payload["content"],
-                    "metadata": hit.payload["metadata"],
-                    "score": hit.score
+                    "metadata": hit.payload.get("metadata", {}),
+                    "score": hit.score,
+                    "vector_similarity": hit.score,
                 }
                 for hit in search_result
             ]
@@ -109,15 +119,21 @@ class QdrantMemorySystem:
                 
                 for i, score in enumerate(rerank_scores):
                     results[i]["rerank_score"] = float(score)
-                
-                # Sort by rerank score
-                results.sort(key=lambda x: x["rerank_score"], reverse=True)
-                results = results[:limit]
-                
-            return results
+                    results[i]["reranker_score"] = float(score)
+
+            results = self.leakage_gate.rescore_results(
+                results,
+                current_state=current_state,
+                filter_disallowed=filter_disallowed,
+            )
+            return results[:limit]
         except Exception as e:
             logger.error(f"Error searching memories in Qdrant: {e}")
             return []
+
+    def search(self, query: str, limit: int = 10, rerank: bool = True) -> List[Dict[str, Any]]:
+        """Backward-compatible wrapper around :meth:`search_memory`."""
+        return self.search_memory(query=query, limit=limit, rerank=rerank)
 
 if __name__ == "__main__":
     qms = QdrantMemorySystem()
