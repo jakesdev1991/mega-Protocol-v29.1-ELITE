@@ -22,8 +22,11 @@ from utils.logger import logger
 
 class QdrantMemorySystem:
     def __init__(self):
-        self.client = QdrantClient(path=str(config.qdrant_path))
-        self.collection_name = "omega_memories"
+        if config.qdrant_url:
+            self.client = QdrantClient(url=config.qdrant_url)
+        else:
+            self.client = QdrantClient(path=str(config.qdrant_path))
+        self.collection_name = config.qdrant_collection
         self.embedding_model_name = config.ltm_embedding
         self.reranker_model_name = config.reranker_model
         

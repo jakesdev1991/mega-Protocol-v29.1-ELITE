@@ -9,6 +9,10 @@ from mcp.server.fastmcp import FastMCP
 import os
 import sys
 
+# Ensure project root is in path for shared configuration defaults
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from configs.config import config
+
 # Initialize FastMCP server
 mcp = FastMCP("Omega_Workspace_Filesystem")
 
@@ -65,7 +69,7 @@ def get_file_info(path: str) -> dict:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Omega MCP Filesystem Server")
-    parser.add_argument("--transport", choices=["stdio", "sse"], default="stdio", help="Transport protocol to use (default: stdio)")
+    parser.add_argument("--transport", choices=["stdio", "sse"], default=config.mcp_transport, help="Transport protocol to use (default: OMEGA_MCP_TRANSPORT or stdio)")
     parser.add_argument("--port", type=int, default=8000, help="Port for SSE transport (default: 8000)")
     args = parser.parse_args()
 
